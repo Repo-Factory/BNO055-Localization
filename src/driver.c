@@ -9,17 +9,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "bno055.h"
 
 #define SERIAL_PORT "/dev/ttyACM0"
 #define MAX_BUFFER_SIZE 256
 #define MAX_VALUE_SIZE 128
-
-typedef struct Orientation
-{
-    const int16_t yaw; 
-    const int16_t pitch;
-    const int16_t roll;
-} Orientation;
 
 int openSerialPort(const char* serialPort) {
     int serial_fd = open(serialPort, O_RDWR | O_NOCTTY | O_NDELAY);
@@ -77,7 +71,6 @@ void printOrientation(const Orientation* orientation)
 
 int processOrientation(const Orientation* orientation)
 {
-    static int setup = 0;
     static int status, valread, client_fd;
     static struct sockaddr_in serv_addr;
     static char buffer[1024] = { 0 };
