@@ -8,7 +8,6 @@
 #include "bytes.h"
 
 #define DEBUG_MODE
-#define LED_PIN         25ul    // On board LED
 #define FAST_I2C_FREQ   400000  // Fast i2C @ 400kHz
 #define I2C_ADDR        0x29    // BNO055
 #define I2C_SCL         21
@@ -43,8 +42,6 @@ void processOrientation(const Orientation* orientation);
 int main() 
 {                 
     setupBNO055();
-    setup_UART();
-
     for(;;)
     {
         if(i2c_get_write_available(i2c0)) 
@@ -60,7 +57,6 @@ int main()
                 const Orientation orientation = {yaw, pitch, roll};
 
                 printOrientation(&orientation);
-                processOrientation(&orientation);
             }
             busy_wait_ms(15);
         }
@@ -98,29 +94,4 @@ void setup_i2C(i2c_inst_t* i2c)
 void printOrientation(const Orientation* orientation)
 {
     printf("%d %d %d ", orientation->yaw, orientation->pitch, orientation->roll);
-}
-
-void processOrientation(const Orientation* orientation)
-{
-    uint8_t orientation_data[6] = 
-    {
-        (orientation->yaw && 0xFF00) >> 8, orientation->yaw && 0x00FF,
-        (orientation->pitch && 0xFF00) >> 8, orientation->pitch && 0x00FF,
-        (orientation->roll && 0xFF00) >> 8, orientation->roll && 0x00FF,
-    };
-
-    for (int i = 0; i < 6; i++)
-    {
-        uart_putc_raw(uart0, orientation_data[i]);
-    }
-}
-
-void fixedToDecimal(char* str, int16_t fp)
-{
-    uint16_t ft = 0;
-    for (uint8_t i = 0; i < 4; ++i)
-    {
-        ft += ((fp >> i) & 0x1) * (625 << i);
-    }
-    printf("%d.%d", fp >> 4, ft);
 }
