@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
 #include "hardware/i2c.h"
+#include "hardware/uart.h"
 #include "hardware/timer.h"
 #include "hardware/pwm.h"
 #include "bytes.h"
@@ -32,6 +33,7 @@ typedef struct Orientation
 } Orientation;
 
 void setupBNO055();
+void setup_UART();
 void setup_i2C(i2c_inst_t* i2c);
 void fixedToDecimal(char *str, int16_t fp);
 void printOrientation(const Orientation* orientation);
@@ -41,6 +43,8 @@ void processOrientation(const Orientation* orientation);
 int main() 
 {                 
     setupBNO055();
+    setup_UART();
+
     for(;;)
     {
         if(i2c_get_write_available(i2c0)) 
@@ -74,6 +78,14 @@ void setupBNO055()
     i2c_write_blocking(i2c0, I2C_ADDR, NDOF_SET, TWO_BYTES, NOSTOP_FALSE);
 }
 
+void setup_UART()
+{
+    const uint BAUD_RATE = 115200;
+    const uint TX_PIN = 0;
+    uart_init(uart0, BAUD_RATE);
+    gpio_set_function(TX_PIN, GPIO_FUNC_UART);
+}
+
 void setup_i2C(i2c_inst_t* i2c)
 {
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
@@ -85,47 +97,22 @@ void setup_i2C(i2c_inst_t* i2c)
 
 void printOrientation(const Orientation* orientation)
 {
-    fixedToDecimal("Yaw", orientation->yaw);
-    fixedToDecimal("Pitch", orientation->pitch);
-    fixedToDecimal("Roll", orientation->roll);
-    printf("\n");
+    printf("%d %d %d ", orientation->yaw, orientation->pitch, orientation->roll);
 }
 
 void processOrientation(const Orientation* orientation)
 {
-    // int status, valread, client_fd;
-    // struct sockaddr_in serv_addr;
-    // char buffer[1024] = { 0 };
+    uint8_t orientation_data[6] = 
+    {
+        (orientation->yaw && 0xFF00) >> 8, orientation->yaw && 0x00FF,
+        (orientation->pitch && 0xFF00) >> 8, orientation->pitch && 0x00FF,
+        (orientation->roll && 0xFF00) >> 8, orientation->roll && 0x00FF,
+    };
 
-    // if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    //     printf("\n Socket creation error \n");
-    //     return -1;
-    // }
- 
-    // serv_addr.sin_family = AF_INET;
-    // serv_addr.sin_port = htons(PORT);
- 
-    // // Convert IPv4 and IPv6 addresses from text to binary
-    // // form
-    // if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
-    //     printf(
-    //         "\nInvalid address/ Address not supported \n");
-    //     return -1;
-    // }
- 
-    // if ((status = connect(client_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
-    //     printf("\nConnection Failed \n");
-    //     return -1;
-    // }
-
-    // send(client_fd, orientation, sizeof(orientation), 0);
-    // printf("Orientation message sent\n");
-    // valread = read(client_fd, buffer, 1024 - 1); // subtract 1 for the null terminator at the end
-    // printf("%s\n", buffer);
- 
-    // // closing the connected socket
-    // close(client_fd);
-    // return 0;
+    for (int i = 0; i < 6; i++)
+    {
+        uart_putc_raw(uart0, orientation_data[i]);
+    }
 }
 
 void fixedToDecimal(char* str, int16_t fp)
@@ -135,5 +122,5 @@ void fixedToDecimal(char* str, int16_t fp)
     {
         ft += ((fp >> i) & 0x1) * (625 << i);
     }
-    printf("%s\t%d.%d\t", str, fp >> 4, ft);
+    printf("%d.%d", fp >> 4, ft);
 }
