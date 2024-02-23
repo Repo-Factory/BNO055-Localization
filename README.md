@@ -33,4 +33,4 @@ Finally, the server intermediate code needs to be built (simple gcc command) and
 
 ## Authors
 
-[@Strix Elixel](https://github.com/Repo-Factory/) Github
+[@Conner Sommerfield](https://github.com/Repo-Factory/) Github
