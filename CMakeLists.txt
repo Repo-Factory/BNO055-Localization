@@ -13,7 +13,7 @@ pico_sdk_init()
 
 add_executable(
                 EMBEDDED_NODE_RP2040
-                src/bno055.c
+                src/hardware/bno055.c
                 )
 
 # Link Libraries
