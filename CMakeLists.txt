@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
+set(PICO_SDK_PATH      ~/pico/pico-sdk)
 include(pico_sdk_import.cmake)
 
 project(EMBEDDED_NODE_RP2040 C CXX ASM)
